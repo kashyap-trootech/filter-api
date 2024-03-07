@@ -81,7 +81,7 @@ async function filterResponses(formId: string, filters: FilterClauseType[]) {
 
   return {
     responses: filteredResponses,
-    totalResponses: response.data.totalResponses,
+    totalResponses: filteredResponses?.length || 0,
     pageCount: response.data.pageCount,
   };
 }
