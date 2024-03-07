@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import axios, { isAxiosError } from "axios";
 
+//filter type
 type FilterClauseType = {
   id: string;
   condition: "equals" | "does_not_equal" | "greater_than" | "less_than";
@@ -12,25 +13,30 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
+//api endpoint to get filtered responses
 app.get("/:formId/filteredResponses", async (req: Request, res: Response) => {
   const { formId } = req.params;
   const { filters } = req.query;
 
   try {
+    //throw error if filters not provided
     if (!filters) {
       return res.status(400).json({ error: "Filters required" });
     }
 
     try {
       const parsedFilters = JSON.parse(filters as string);
+      //call filterResponses to get filtered responses
       const responses = await filterResponses(formId as string, parsedFilters);
 
       res.json(responses);
     } catch (e: any) {
+      //handle invalid filter json error from payload
       res.status(500).json({ error: "Please provide valid filters Array" });
     }
   } catch (error) {
     console.error("Error", error);
+    //handle error generated from third party api
     if (isAxiosError(error)) {
       if (error.response && error.response.status) {
         res
@@ -39,13 +45,16 @@ app.get("/:formId/filteredResponses", async (req: Request, res: Response) => {
       } else {
         res.status(500).json({ error: "Internal server error" });
       }
-    } else {
+    } 
+    //handle common errors
+    else {
       res.status(500).json({ error: "Internal server error" });
     }
   }
 });
 
 async function filterResponses(formId: string, filters: FilterClauseType[]) {
+  //fetch all responses for provided form id
   const response = await axios.get(
     `https://api.fillout.com/v1/api/forms/${formId}/submissions`,
     {
@@ -56,6 +65,7 @@ async function filterResponses(formId: string, filters: FilterClauseType[]) {
     }
   );
 
+    //filter out responses based on provided filters
   const filteredResponses = response.data.responses.filter((response: any) => {
     return filters.every((filter) => {
       const question = response.questions.find(
