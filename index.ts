@@ -21,19 +21,32 @@ app.get("/:formId/filteredResponses", async (req: Request, res: Response) => {
   try {
     //throw error if filters not provided
     if (!filters) {
-      return res.status(400).json({ error: "Filters required" });
+      const response = await axios.get(
+        `https://api.fillout.com/v1/api/forms/${formId}/submissions`,
+        {
+          headers: {
+            Authorization:
+              "Bearer sk_prod_TfMbARhdgues5AuIosvvdAC9WsA5kXiZlW8HZPaRDlIbCpSpLsXBeZO7dCVZQwHAY3P4VSBPiiC33poZ1tdUj2ljOzdTCCOSpUZ_3912",
+          },
+        }
+      );
+
+      res.json(response.data);
+    }
+    else{
+      try {
+        const parsedFilters = JSON.parse(filters as string);
+        //call filterResponses to get filtered responses
+        const responses = await filterResponses(formId as string, parsedFilters);
+  
+        res.json(responses);
+      } catch (e: any) {
+        //handle invalid filter json error from payload
+        res.status(500).json({ error: "Please provide valid filters Array" });
+      }
     }
 
-    try {
-      const parsedFilters = JSON.parse(filters as string);
-      //call filterResponses to get filtered responses
-      const responses = await filterResponses(formId as string, parsedFilters);
-
-      res.json(responses);
-    } catch (e: any) {
-      //handle invalid filter json error from payload
-      res.status(500).json({ error: "Please provide valid filters Array" });
-    }
+    
   } catch (error) {
     console.error("Error", error);
     //handle error generated from third party api
